@@ -1,0 +1,35 @@
+# git-cliff configuration
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message }}\
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+# Parse each line of the commit message as a separate conventional commit.
+# This handles multiple changes in one commit body.
+split_commits = true
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  { message = "^feat", group = "🚀 Features" },
+  { message = "^fix", group = "🐛 Bug Fixes" },
+  { message = "^perf", group = "⚡ Performance" },
+  { message = "^refactor", group = "♻️ Refactoring" },
+  { message = "^docs", group = "📚 Documentation" },
+  { message = "^style", group = "🎨 Style" },
+  { message = "^test", group = "🧪 Tests" },
+  { message = "^build", group = "🏗️ Build" },
+  { message = "^ci", group = "👷 CI" },
+  { message = "^chore", skip = true },
+]
+filter_commits = false
+tag_pattern = "v[0-9].*"

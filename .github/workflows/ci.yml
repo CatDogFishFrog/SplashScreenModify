@@ -5,6 +5,7 @@
 #   https://nightly.link/<owner>/<repo>/workflows/ci/<branch>/SplashScreenModify.zip
 # nightly.link addresses the workflow by its file name, so keep this file called ci.yml
 # and the artifact name below unchanged.
+
 name: CI
 
 on:

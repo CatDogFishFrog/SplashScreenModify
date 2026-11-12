@@ -36,7 +36,9 @@ exe = EXE(
     name='SplashScreenModify',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
+    # Must stay off on Windows: if GNU strip is on PATH (Git Bash on CI), PyInstaller runs it on python312.dll
+    # and the executable then fails to start ("Failed to load Python DLL").
+    strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,

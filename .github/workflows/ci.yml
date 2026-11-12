@@ -88,15 +88,18 @@ jobs:
         run: python -m pip install -r requirements.txt pyinstaller
 
       - name: Download UPX
+        id: upx
         env:
           UPX_VERSION: "5.3.0"
         run: |
           curl -fsSL "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-win64.zip" -o upx.zip
           7z x upx.zip -oupx-dir
-          echo "$PWD/upx-dir/upx-${UPX_VERSION}-win64" >> "$GITHUB_PATH"
+          upx_dir="$(cygpath -w "$PWD/upx-dir/upx-${UPX_VERSION}-win64")"
+          echo "dir=$upx_dir" >> "$GITHUB_OUTPUT"
+          "$PWD/upx-dir/upx-${UPX_VERSION}-win64/upx.exe" --version
 
       - name: Build
-        run: pyinstaller SplashScreenModify.spec --noconfirm
+        run: pyinstaller SplashScreenModify.spec --noconfirm --upx-dir "${{ steps.upx.outputs.dir }}"
 
       - name: Smoke test the executable
         env:

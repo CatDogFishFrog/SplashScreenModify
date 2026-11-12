@@ -11,10 +11,13 @@ output="$3"
 
 previous="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "${tag}^" 2>/dev/null || true)"
 
-# Changes since the previous release; for the very first release, the whole history.
+# Changes since the previous release; for the first release, commits since this project started (skipping upstream history).
+UPSTREAM_BASE="20e720680a9d9c1f27adc8fb346bef9fe2ae3fa7"
 cliff_args=(--config cliff.toml --strip header)
 if [[ -n "$previous" ]]; then
   cliff_args+=("${previous}..${tag}")
+else
+  cliff_args+=("${UPSTREAM_BASE}..${tag}")
 fi
 changelog="$(git-cliff "${cliff_args[@]}")"
 changelog="${changelog#"${changelog%%[![:space:]]*}"}"  # drop leading blank lines

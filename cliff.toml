@@ -7,11 +7,13 @@ header = ""
 # The "<!-- N -->" prefixes in group names only fix the order of the sections; they are stripped here.
 body = """
 {% for group, commits in commits | group_by(attribute="group") %}
+{%- if not group is starting_with("<!-- skip -->") %}
 ### {{ group | striptags | trim | upper_first }}
 {% for commit in commits %}
 - {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | trim_end_matches(pat=".") | upper_first }}\
 {% endfor %}
-{% endfor %}
+{% endif %}
+{%- endfor %}
 """
 trim = true
 
@@ -27,13 +29,14 @@ commit_preprocessors = [
   { pattern = '\s*\(#\d+\)\s*$', replace = "" },
 ]
 # Only changes a user of the tool can notice are listed.
-# refactor, docs, style, test, build, ci, chore and anything unconventional stay out.
+# Note: Unwanted types are assigned to "<!-- skip -->*" groups instead of "skip = true",
+# because git-cliff aborts split_commits if the first line of a multi-line commit is skipped.
 commit_parsers = [
-  { message = '^\w+\((ci|build|deps|docs|test|tests|release)\)!?:', skip = true },
+  { message = '^\w+\((ci|build|deps|docs|test|tests|release)\)!?:', group = "<!-- skip -->Internal" },
   { message = '^\w+(\([^)]*\))?!:', group = "<!-- 0 -->Breaking changes" },
   { message = "^feat", group = "<!-- 1 -->Added" },
   { message = "^perf", group = "<!-- 2 -->Improved" },
   { message = "^fix", group = "<!-- 3 -->Fixed" },
-  { message = ".*", skip = true },
+  { message = ".*", group = "<!-- skip -->Other" },
 ]
 tag_pattern = "v[0-9].*"

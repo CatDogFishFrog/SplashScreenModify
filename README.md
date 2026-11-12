@@ -1,24 +1,75 @@
 # JetBrainsSplashModify
 
-## 简介
 > [!NOTE]
 > Windows only.
 
-`JetBrainsSplashModify` 是一个用于修改 JetBrains IDE 启动画面（Splash Screen）和其他相关资源的 Python 工具。通过这个工具，用户可以轻松替换 JetBrains 软件中的默认图片。
+A console tool that replaces splash screens and other branding images of installed applications.
+It is built from pluggable modules: JetBrains IDEs, Android Studio and Unity Editor are included, and new
+modules are picked up automatically.
 
-## 使用方法
+## Usage
 
-1. **准备工作**:
-   - 将你希望替换的图片文件放置在项目根目录下。
+1. Prepare the replacement image (place it anywhere and note its path).
+2. Run `python main.py` or the executable from the [releases](https://github.com/Siltal/JetBrainsSplashModify/releases) page.
+3. Pick a module, an application and an action. You can type a number or part of a name (`py` selects PyCharm),
+   `0` goes back and `q` quits.
+   - **Extract images** saves the current images to `extracted/<application>/` next to the tool.
+   - **Replace images** asks for the picture path (quotes are accepted) and fits it to each original size.
+   - **Restore originals** puts the original images back from the backup.
+4. If the installation is not detected automatically, you are asked for its root folder (a `bin` folder is accepted).
+   For Unity Editor every installed version is listed (found through Unity Hub); choose **Other location...** to type a folder.
 
-2. **运行脚本**:
-   - 确保所有配置都已正确设置后，运行 `main.py`或 [Release](https://github.com/Siltal/JetBrainsSplashModify/releases) 中的exe。
-   - 选择要修改的软件类别，选择软件，选择操作，提供图片路径
-   - 如果无法获取到安装地址，请手动提供安装地址。
+Applications detected on this PC are marked `detected` in the list.
 
-## 注意事项
+## Python environment
 
-- 确保提供的图片尺寸与目标替换图片的宽高比相匹配，以避免显示异常。
-  - 若宽高比不相同则裁切中心的部分。
-- 替换操作可能需要管理员权限，确保你在具有足够权限的环境中运行此脚本。
-- 无法获取通常是由于通过Toolbox安装导致的。
+Python 3.12 or newer (developed on 3.14).
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python .\main.py
+```
+
+## Tests
+
+```powershell
+python -m unittest discover -s tests -t .
+```
+
+## Build the executable
+
+```powershell
+python -m pip install pyinstaller
+pyinstaller JetBrainsSplashModify.spec
+```
+
+## Project layout
+
+```
+main.py                  launcher (also the PyInstaller entry point)
+splashmodify/
+  core/                  contracts, ports, module discovery (pure Python)
+  cli/                   console interface
+  system/                registry, paths, well-known folders
+  toolkit/jar_splash/    reusable building blocks for JAR-based splash images
+  toolkit/pe_splash/     reusable building blocks for images stored in exe/dll resources
+  modules/               plugins: jetbrains/, android_studio/, unity/, ...
+  bootstrap.py           wires everything together
+tests/
+docs/
+```
+
+- Architecture and the dependency rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Adding a module or another IDE: [docs/ADDING_A_MODULE.md](docs/ADDING_A_MODULE.md)
+- Unity Editor module (how it works, safety, limits): [docs/UNITY_MODULE.md](docs/UNITY_MODULE.md)
+
+## Notes
+
+- If the image's aspect ratio differs from the original, it is center-cropped.
+- Administrator privileges may be required to modify files in the installation folder. Close the application before replacing or restoring files.
+- A `*.custom.backup` file is created before the first replacement. Later replacements do not overwrite it; **Restore originals** uses it.
+- The installation path may not be detected automatically if the IDE was installed through Toolbox.
+- Unity Editor: the splash is stored in `Editor\Unity.dll`; close Unity first and run the tool as administrator. The original is kept in `Unity.dll.custom.backup`.
+- Set `SPLASHMODIFY_DEBUG=1` to print full tracebacks for unexpected errors.

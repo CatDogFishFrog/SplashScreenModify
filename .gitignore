@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+.idea/
+
+# Images extracted by the "Extract images" action.
+extracted/
+research/
+*.zip
+res/raw/

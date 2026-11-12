@@ -1,6 +1,12 @@
+<div align="center">
+
 # SplashScreenModify
 
 [![CI](https://github.com/CatDogFishFrog/SplashScreenModify/actions/workflows/ci.yml/badge.svg)](https://github.com/CatDogFishFrog/SplashScreenModify/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/CatDogFishFrog/SplashScreenModify?label=release&logo=github)](https://github.com/CatDogFishFrog/SplashScreenModify/releases/latest/download/SplashScreenModify.exe)
+[![Nightly build](https://img.shields.io/badge/nightly-download-blue?logo=githubactions&logoColor=white)](https://nightly.link/CatDogFishFrog/SplashScreenModify/workflows/ci/main/SplashScreenModify.zip)
+
+</div>
 
 > [!NOTE]
 > Windows only.
@@ -8,11 +14,6 @@
 A console tool that replaces splash screens and other branding images of installed applications.
 It is built from pluggable modules: JetBrains IDEs, Android Studio and Unity Editor are included, and new
 modules are picked up automatically.
-
-## Download
-
-- Release: [SplashScreenModify.exe](https://github.com/CatDogFishFrog/SplashScreenModify/releases/latest/download/SplashScreenModify.exe). All versions are on the [releases](https://github.com/CatDogFishFrog/SplashScreenModify/releases) page.
-- Development build of `main`: [SplashScreenModify.zip](https://nightly.link/CatDogFishFrog/SplashScreenModify/workflows/ci/main/SplashScreenModify.zip). It comes from the newest commit that passed the tests and may be unstable.
 
 ## Usage
 

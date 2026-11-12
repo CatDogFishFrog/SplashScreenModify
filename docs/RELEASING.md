@@ -33,14 +33,14 @@ The newest release is always available at
 
 ## Making a release
 
-1. Raise `__version__` in `splashmodify/__init__.py`, commit to `main` and wait for the run to turn green.
-2. Tag the commit and push the tag:
+1. Tag the commit on `main` and push the tag:
    ```
    git tag v1.2.0
    git push origin v1.2.0
    ```
-   The tag must be `v` plus `__version__`, otherwise the build stops with an explanation.
-3. CI creates the release. A tag containing a hyphen (`v1.2.0-rc.1`) is published as a pre-release.
+   CI takes the version number from the tag, injects it into the built executable automatically, and creates
+   the GitHub release. No manual version bump is needed in the source code.
+2. A tag containing a hyphen (`v1.2.0-rc.1`) is published as a pre-release.
 
 The notes list `feat`, `perf` and `fix` commits since the previous tag; see [COMMITS.md](COMMITS.md).
 If a release contains only internal changes, the notes say so. The text can still be edited on GitHub afterwards.

@@ -1,4 +1,6 @@
-# JetBrainsSplashModify
+# SplashScreenModify
+
+[![CI](https://github.com/CatDogFishFrog/SplashScreenModify/actions/workflows/ci.yml/badge.svg)](https://github.com/CatDogFishFrog/SplashScreenModify/actions/workflows/ci.yml)
 
 > [!NOTE]
 > Windows only.
@@ -7,10 +9,15 @@ A console tool that replaces splash screens and other branding images of install
 It is built from pluggable modules: JetBrains IDEs, Android Studio and Unity Editor are included, and new
 modules are picked up automatically.
 
+## Download
+
+- Release: [SplashScreenModify.exe](https://github.com/CatDogFishFrog/SplashScreenModify/releases/latest/download/SplashScreenModify.exe). All versions are on the [releases](https://github.com/CatDogFishFrog/SplashScreenModify/releases) page.
+- Development build of `main`: [SplashScreenModify.zip](https://nightly.link/CatDogFishFrog/SplashScreenModify/workflows/ci/main/SplashScreenModify.zip). It comes from the newest commit that passed the tests and may be unstable.
+
 ## Usage
 
 1. Prepare the replacement image (place it anywhere and note its path).
-2. Run `python main.py` or the executable from the [releases](https://github.com/Siltal/JetBrainsSplashModify/releases) page.
+2. Run `python main.py` or the executable from the [releases](https://github.com/CatDogFishFrog/SplashScreenModify/releases) page.
 3. Pick a module, an application and an action. You can type a number or part of a name (`py` selects PyCharm),
    `0` goes back and `q` quits.
    - **Extract images** saves the current images to `extracted/<application>/` next to the tool.
@@ -38,11 +45,13 @@ python .\main.py
 python -m unittest discover -s tests -t .
 ```
 
+CI runs the same command on Windows with Python 3.12 and 3.14 for every push.
+
 ## Build the executable
 
 ```powershell
 python -m pip install pyinstaller
-pyinstaller JetBrainsSplashModify.spec
+pyinstaller SplashScreenModify.spec
 ```
 
 ## Project layout
@@ -64,6 +73,8 @@ docs/
 - Architecture and the dependency rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Adding a module or another IDE: [docs/ADDING_A_MODULE.md](docs/ADDING_A_MODULE.md)
 - Unity Editor module (how it works, safety, limits): [docs/UNITY_MODULE.md](docs/UNITY_MODULE.md)
+- CI, nightly builds and how to make a release: [docs/RELEASING.md](docs/RELEASING.md)
+- Commit message format (it feeds the release notes): [docs/COMMITS.md](docs/COMMITS.md)
 
 ## Notes
 

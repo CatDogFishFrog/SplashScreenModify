@@ -1,109 +1,160 @@
+# Tests and a build on every push; a GitHub release when a "v*" tag is pushed.
+#
+# Every successful run publishes the "SplashScreenModify" artifact, so the latest build of a branch
+# is available without logging in to GitHub through nightly.link:
+#   https://nightly.link/<owner>/<repo>/workflows/ci/<branch>/SplashScreenModify.zip
+# nightly.link addresses the workflow by its file name, so keep this file called ci.yml
+# and the artifact name below unchanged.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
     tags: ["v*"]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ARTIFACT_NAME: SplashScreenModify
+  EXE_PATH: dist/SplashScreenModify.exe
+  # The executable bundles this Python, so it is the oldest version the project supports.
+  BUILD_PYTHON: "3.12"
 
 jobs:
   test:
-    name: Tests
+    name: Tests (Python ${{ matrix.python }})
+    # A pull request from a branch of this repository is already covered by the push run.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
+          cache: pip
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+        run: python -m pip install -r requirements.txt
 
       - name: Run tests
-        run: python -m pytest tests/ -v
+        run: python -m unittest discover -s tests -t . -v
 
   build:
     name: Build EXE
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: ${{ env.BUILD_PYTHON }}
+          cache: pip
+
+      - name: Read the application version
+        id: version
+        run: echo "value=$(python -c 'from splashmodify import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+
+      - name: Check that the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if [[ "$TAG" != "v$VERSION" ]]; then
+            echo "::error::Tag $TAG does not match __version__ $VERSION in splashmodify/__init__.py. Bump the version and tag again."
+            exit 1
+          fi
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+        run: python -m pip install -r requirements.txt pyinstaller
 
       - name: Build
-        run: pyinstaller JetBrainsSplashModify.spec --noconfirm
+        run: pyinstaller SplashScreenModify.spec --noconfirm
 
-      - name: Show build size
+      - name: Smoke test the executable
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: python .github/scripts/smoke_test.py --version "$VERSION" "$EXE_PATH"
+
+      - name: Summary
         run: |
-          $file = Get-Item "dist\JetBrainsSplashModify.exe"
-          "EXE size: {0:N2} MB" -f ($file.Length / 1MB)
+          size="$(awk -v bytes="$(stat -c %s "$EXE_PATH")" 'BEGIN { printf "%.2f MB", bytes / 1048576 }')"
+          echo "Built \`$(basename "$EXE_PATH")\`, $size." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Link to the latest build of this branch
+        if: github.ref_type == 'branch' && github.event_name != 'pull_request'
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          {
+            echo
+            echo "Download without logging in, once this run succeeds:"
+            echo "https://nightly.link/${GITHUB_REPOSITORY}/workflows/ci/${BRANCH}/${ARTIFACT_NAME}.zip"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: JetBrainsSplashModify
-          path: dist/JetBrainsSplashModify.exe
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.EXE_PATH }}
+          if-no-files-found: error
 
   release:
     name: Release
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
-          name: JetBrainsSplashModify
+          name: ${{ env.ARTIFACT_NAME }}
           path: dist
 
-      - name: Install git-cliff
-        uses: orhun/git-cliff-action@v4
-        id: changelog
+      - uses: actions/setup-python@v7
         with:
-          config: cliff.toml
-          args: --latest --strip header
+          python-version: ${{ env.BUILD_PYTHON }}
 
-      - name: Get previous tag
-        id: prev_tag
+      - name: Prepare release notes and checksum
+        env:
+          TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          PREV=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p')
-          echo "tag=${PREV:-}" >> "$GITHUB_OUTPUT"
+          python -m pip install git-cliff==2.14.2
+          bash .github/scripts/release-notes.sh "$TAG" "$REPOSITORY" release-notes.md
+          (cd dist && sha256sum "$(basename "$EXE_PATH")" > "$(basename "$EXE_PATH").sha256")
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          body: |
-            ## JetBrains Splash Modify ${{ github.ref_name }}
-
-            **Platform:** Windows x64
-            **Python:** 3.12 (bundled via PyInstaller)
-
-            ### What's changed
-
-            ${{ steps.changelog.outputs.content }}
-
-            **Full changelog:** ${{ steps.prev_tag.outputs.tag && format('[{0}...{1}](https://github.com/{2}/compare/{0}...{1})', steps.prev_tag.outputs.tag, github.ref_name, github.repository) || format('[All commits up to {0}](https://github.com/{1}/commits/{0})', github.ref_name, github.repository) }}
-          files: dist/JetBrainsSplashModify.exe
-          generate_release_notes: false
+          body_path: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            ${{ env.EXE_PATH }}
+            ${{ env.EXE_PATH }}.sha256
+          fail_on_unmatched_files: true

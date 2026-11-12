@@ -33,7 +33,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [('O', None, 'OPTION'), ('O', None, 'OPTION')],
-    name='JetBrainsSplashModify',
+    name='SplashScreenModify',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,

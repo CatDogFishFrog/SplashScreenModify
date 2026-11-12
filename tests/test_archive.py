@@ -95,7 +95,9 @@ class ReplaceImagesTests(unittest.TestCase):
 def make_indexed_jar(root: Path, *, comment_marker: int = 4) -> Path:
     """A JAR laid out like JetBrains' IDE JARs: stored entries and a trailing ``__index__`` that the comment points into."""
     original = root / "original.png"
-    Image.new("RGB", (60, 40), "blue").save(original)
+    # A solid black PNG compresses to fewer bytes than the solid red replacement image,
+    # ensuring the payload shifts and exercises index relocation.
+    Image.new("RGB", (60, 40), "black").save(original)
     names = ["first.txt", TARGET, "last.txt"]
     payloads = {"first.txt": b"a" * 100, TARGET: original.read_bytes(), "last.txt": b"z" * 300}
     jar = root / "indexed.jar"

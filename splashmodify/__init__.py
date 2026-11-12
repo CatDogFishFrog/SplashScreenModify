@@ -1,4 +1,4 @@
-"""JetBrainsSplashModify: replace splash images of installed applications."""
+"""SplashScreenModify: replace splash images of installed applications."""
 
 APP_TITLE = "JetBrains Splash Modify"
 APP_TAGLINE = "Replace splash screens of installed applications."
